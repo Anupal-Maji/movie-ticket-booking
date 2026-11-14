@@ -1,0 +1,12 @@
+{
+  "user_name": "Test User",
+  "user_email": "test@example.com",
+  "movie_name": "RRR",
+  "movie_id": 1,
+  "theatre_name": "PVR Bengaluru",
+  "show_date": "2026-09-15",
+  "show_time": "6:00 PM",
+  "seat_numbers": "B3",
+  "payment_id": "pending",
+  "total_amount": 250
+}

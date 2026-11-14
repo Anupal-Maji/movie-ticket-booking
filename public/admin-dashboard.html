@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Analytics Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f5f7; margin: 0; padding: 20px; }
+  h1 { color: #222; }
+  #login-box { max-width: 320px; margin: 80px auto; background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  #login-box input { width: 100%; padding: 8px; margin: 6px 0; box-sizing: border-box; }
+  #login-box button { width: 100%; padding: 10px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  #dashboard { display: none; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+  .card { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  .card h3 { margin-top: 0; color: #444; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td, th { padding: 6px 8px; text-align: left; border-bottom: 1px solid #eee; }
+  #error-msg { color: #b91c1c; margin-top: 10px; }
+  #logout-btn { float: right; background: #ef4444; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; }
+</style>
+</head>
+<body>
+ 
+<div id="login-box">
+  <h2>Admin Login</h2>
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">Log in</button>
+  <div id="error-msg"></div>
+</div>
+ 
+<div id="dashboard">
+  <button id="logout-btn" onclick="logout()">Log out</button>
+  <h1>Admin Analytics Dashboard</h1>
+ 
+  <div class="grid">
+    <div class="card">
+      <h3>Cancellation Rate</h3>
+      <div id="cancellation-data">Loading...</div>
+    </div>
+ 
+    <div class="card">
+      <h3>Peak Booking Hours</h3>
+      <div id="peak-hours-data">Loading...</div>
+    </div>
+ 
+    <div class="card">
+      <h3>Most Popular Movies</h3>
+      <div id="popular-movies-data">Loading...</div>
+    </div>
+ 
+    <div class="card">
+      <h3>Busiest Theatres</h3>
+      <div id="busiest-theatres-data">Loading...</div>
+    </div>
+ 
+    <div class="card" style="grid-column: 1 / -1;">
+      <h3>Revenue (Daily)</h3>
+      <div id="revenue-data">Loading...</div>
+    </div>
+  </div>
+</div>
+ 
+<script>
+const API_BASE = 'http://localhost:3000/api/admin';
+ 
+async function login() {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const errorBox = document.getElementById('error-msg');
+  errorBox.textContent = '';
+ 
+  try {
+    const res = await fetch(`${API_BASE}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+ 
+    const data = await res.json();
+ 
+    if (!res.ok) {
+      errorBox.textContent = data.error || 'Login failed.';
+      return;
+    }
+ 
+    localStorage.setItem('admin_token', data.token);
+    document.getElementById('login-box').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadAllAnalytics();
+  } catch (err) {
+    errorBox.textContent = 'Could not reach the server. Is it running?';
+    console.error(err);
+  }
+}
+ 
+async function logout() {
+  const token = localStorage.getItem('admin_token');
+ 
+  try {
+    await fetch(`${API_BASE}/logout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+  } catch (err) {
+    console.error('Logout request failed (server may be down):', err);
+  
+  }
+ 
+  localStorage.removeItem('admin_token');
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-box').style.display = 'block';
+}
+ 
+async function authFetch(endpoint) {
+  const token = localStorage.getItem('admin_token');
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`${endpoint} failed: ${res.status}`);
+  return res.json();
+}
+ 
+async function loadAllAnalytics() {
+  try {
+    const revenue = await authFetch('/analytics/revenue');
+    document.getElementById('revenue-data').innerHTML = renderTable(
+      revenue.daily, ['date', 'revenue']
+    );
+  } catch (err) {
+    document.getElementById('revenue-data').textContent = 'Failed to load.';
+    console.error(err);
+  }
+ 
+  try {
+    const movies = await authFetch('/analytics/popular-movies');
+    document.getElementById('popular-movies-data').innerHTML = renderTable(
+      movies, ['movie_name', 'total_bookings']
+    );
+  } catch (err) {
+    document.getElementById('popular-movies-data').textContent = 'Failed to load.';
+    console.error(err);
+  }
+ 
+  try {
+    const theatres = await authFetch('/analytics/busiest-theatres');
+    document.getElementById('busiest-theatres-data').innerHTML = renderTable(
+      theatres, ['theatre_name', 'total_bookings']
+    );
+  } catch (err) {
+    document.getElementById('busiest-theatres-data').textContent = 'Failed to load.';
+    console.error(err);
+  }
+ 
+  try {
+    const hours = await authFetch('/analytics/peak-hours');
+    document.getElementById('peak-hours-data').innerHTML = renderTable(
+      hours, ['hour', 'total_bookings']
+    );
+  } catch (err) {
+    document.getElementById('peak-hours-data').textContent = 'Failed to load.';
+    console.error(err);
+  }
+ 
+  try {
+    const cancellation = await authFetch('/analytics/cancellation-rate');
+    document.getElementById('cancellation-data').innerHTML = `
+      <p>Total bookings: ${cancellation.total_bookings}</p>
+      <p>Cancelled: ${cancellation.cancelled_bookings}</p>
+      <p><strong>Rate: ${cancellation.cancellation_rate_percent}%</strong></p>
+    `;
+  } catch (err) {
+    document.getElementById('cancellation-data').textContent = 'Failed to load.';
+    console.error(err);
+  }
+}
+ 
+function renderTable(rows, columns) {
+  if (!rows || rows.length === 0) return '<p>No data yet.</p>';
+  let html = '<table><tr>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  for (const row of rows) {
+    html += '<tr>' + columns.map(c => `<td>${row[c]}</td>`).join('') + '</tr>';
+  }
+  html += '</table>';
+  return html;
+}
+ 
+
+if (localStorage.getItem('admin_token')) {
+  document.getElementById('login-box').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  loadAllAnalytics();
+}
+</script>
+ 
+</body>
+</html>

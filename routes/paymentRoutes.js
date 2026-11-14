@@ -1,0 +1,11 @@
+const express = require('express'); 
+const router = express.Router(); 
+const paymentController = require('../controllers/paymentController'); 
+const handleRazorpayWebhook = require('../webhooks/razorpayWebhook'); 
+console.log('createOrder type:', typeof paymentController.createOrder); 
+console.log('verifyPayment type:', typeof paymentController.verifyPayment); 
+console.log('webhook type:', typeof handleRazorpayWebhook); 
+router.post('/create-order', paymentController.createOrder); 
+router.post('/verify', paymentController.verifyPayment); 
+router.post('/webhook', handleRazorpayWebhook); 
+module.exports = router; 

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Complete Your Payment</title>
+
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+        <style>
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+
+            body {
+                background: #111120;
+                color: white;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .payment-card {
+                background: #1a1a2e;
+                border-radius: 16px;
+                padding: 40px;
+                width: 100%;
+                max-width: 450px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+                border: 1px solid #2a2a4a;
+            }
+
+            .movie-icon {
+                font-size: 48px;
+                text-align: center;
+                margin-bottom: 16px;
+            }
+
+            h1 {
+                text-align: center;
+                font-size: 22px;
+                font-size: 8px;
+                color: #e0e0ff;
+            }
+
+            .subtitle {
+                text-align: center;
+                color: #888;
+                font-size: 14px;
+                margin-bottom: 30px;
+            }
+
+            .booking-summary {
+                background-color: #0f0f1a;
+                border-radius: 10px;
+                padding: 20px;
+                margin-bottom: 24px;
+                border: 1px solid #2a2a4a;
+            }
+            
+            .summary-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                font-size: 14px;
+                color: #ccc;
+                border-bottom: 1px solid #2a2a4a;
+            }
+
+            .summary-row:last-child {
+                border-bottom: none;
+                font-weight: bold;
+                color: #ffffff;
+                font-size: 16px;
+                padding-top: 12px;
+            }
+
+            .summary-row span:last-child {
+                color: #a78bfa;
+            }
+
+            .pay-btn {
+                width: 100%;
+                padding: 16px;
+                background: linear-gradient(135deg, #6366f1, #a78bfa);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                font-size: 18px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: opacity 0.2s;
+                letter-spacing: 0.5px;
+            }
+
+            .pay-btn:hover {
+                opacity: 0.9;
+            }
+
+            .pay-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .loading-text {
+                text-align: center;
+                color: #888;
+                font-size: 13px;
+                margin-top: 16px;
+                display: none;
+            }
+
+            .status-box {
+                display: none;
+                padding: 16px;
+                border-radius: 10px;
+                text-align: center;
+                margin-top: 20px;
+                font-size: 15px;
+            }
+
+            .status-box.success {
+                background: #1a3a2a;
+                border: 1px solid #4ade80;
+                color: #4ade80;
+            }
+
+            .status-box.error {
+                background: #3a1a1a;
+                border: 1px solid #f87171;
+                color: #f87171;
+            }
+
+            .secure-badge {
+                text-align: center;
+                margin-top: 20px;
+                color: #555;
+                font-size: 12px;
+            }
+        </style>
+    <head>
+    <body>
+
+    <div class="payment-card">
+
+         <div class="movie-icon"></div>
+
+         <h1>Complete Your Booking</h1>
+         <p class="subtitle">You're just one step away from your movie!</p>
+
+         <div class="booking-summary">
+             <div class="summary-row">
+                 <span>Movie</span>
+                 <span id="display-movie">Loading...</span>             
+             </div>
+            <div class="summary-row">
+                <span>Seats</span>
+                <span id="display-seats">Loading...</span>
+            </div>
+            <div class="summary-row">
+                <span>Show Time</span>
+                <span id="display-showtime">Loading...</span>
+            </div>    
+            <div class="summary-row">
+                <span>Total Amount</span>
+                <span id="display-amount">Loading...</span>
+            </div>
+        </div>
+
+        <button class="pay-btn" id="pay-btn">
+            Pay Securely Now
+        </button>
+
+        <p class="loading-text" id="loading-text">
+            Opening payment window...
+        </p>
+
+        <div class="status-box" id="status-box"></div>
+
+        <p class="secure-badge">Secured by Razorpay | 256-bit encryption</p>
+
+    </div>
+    
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <script>
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const bookingId = urlParams.get('booking_id');
+
+        let isPaymentinProgress = false;
+
+  window.onload = async function () {
+
+    if (!bookingId) {
+        showStatus('No booking found. Please go back.', 'error');
+        document.getElementById('pay-btn').disabled = true;
+        return;
+    }
+
+    console.log('Loading booking ID:', bookingId); 
+    try {
+        const response = await fetch('/api/booking/' + bookingId);
+        
+        console.log('Response status:', response.status); 
+        
+        const data = await response.json();
+        
+        console.log('Booking data:', data); 
+
+        if (data.success) {
+            document.getElementById('display-movie').textContent    = data.booking.movie_name   || 'N/A';
+            document.getElementById('display-seats').textContent    = data.booking.seats        || 'N/A';
+            document.getElementById('display-showtime').textContent = data.booking.show_time    || 'N/A';
+            document.getElementById('display-amount').textContent   = '₹' + data.booking.total_amount;
+        } else {
+            showStatus('Could not load booking: ' + data.message, 'error');
+        }
+
+    } catch (error) {
+        console.error('Fetch error:', error);
+        document.getElementById('display-movie').textContent    = 'RRR';
+        document.getElementById('display-seats').textContent    = 'C1, C2';
+        document.getElementById('display-showtime').textContent = '6:00 PM';
+        document.getElementById('display-amount').textContent   = '₹400';
+    }
+};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pay-btn').addEventListener('click', startPayment);
+        });
+        
+        async function startPayment() {
+
+            if (isPaymentinProgress) {
+                console.log('Payment already in progress, ignoring click');
+                return;
+            }
+
+            isPaymentInProgress = true;
+
+            const payBtn = document.getElementById('pay-btn');
+            payBtn.disabled = true;
+
+            document.getElementById('loading-text').style.display = 'block';
+            
+            try {
+                
+                const orderResponse = await fetch('api/payment/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type':'application/json' },
+                    body: JSON.stringify({ booking_id: bookingId })
+                });
+
+                const orderData = await orderResponse.json();
+
+                if (!orderData.success) {
+                    showStatus(' ' + orderData.message, 'error');
+                    payBtn.disabled = false;
+                    document.getElementById('loading-text').style.display = 'none';
+                    return;
+                }
+
+                document.getElementById('loading-text').style.display = 'none';
+
+                const options = {
+                    key: orderData.key_id,
+                    amount: orderData.amount,
+                    currency: orderData.currency,
+                    name: 'MovieApp',
+                    description: `Booking #${bookingId}`,
+                    order_id: orderData.order_id,
+
+                    handler: async function (response) {
+
+                        showStatus('Verifying your payment...', 'success');
+
+                        const verifyResponse = await fetch('/api/payment/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature,
+                                booking_id: bookingId,
+                                idempotency_key: orderData.idempotency_key 
+                            })
+                        });
+
+                        const verifyData = await verifyResponse.json();
+
+                        if (verifyData.success) {
+                            showStatus(' Payment Successful! Your ticket is confirmed!', 'success');
+
+                            setTimeout(() => {
+                                window.location.href = `/booking-confirmation.html?booking_id=${bookingId}`;
+                            }, 2000);
+                        } else {
+                            showStatus(' Payment verification failed. Please contact support.', 'error');
+                            payBtn.disabled = false;
+                            ispaymentInProgress = false;
+                        }
+                    },
+                    
+                    theme: {
+                        color: '#6366f1'
+                    },
+
+                    modal: {
+                        ondismiss: function () {
+                            showStatus('Payment cancelled. Seats held for 2 mins.', 'error');
+                            payBtn.disabled = false;
+                            isPaymentInProgress = false;
+                        }
+                    }
+                };
+                
+                const rzp = new Razorpay(options);
+
+                rzp.on('payment.failed', function (response) {
+                    showStatus(' Payment failed: ' + response.error.description, 'error');
+                    payBtn.disabled = false;
+                    isPaymentinProgress = false;
+                });
+
+                rzp.open();
+
+            } catch (error) {
+                console.error('Payment error:', error);
+                showStatus(' Something went wrong. Please try again.', 'error');
+                payBtn.disabled = false;
+                isPaymentInProgress = false;
+                document.getElementById('loading-text').style.display = 'none';   
+            }    
+        }
+
+        function showStatus(message, type) {
+            const statusBox = document.getElementById('status-box');
+            status.textContent = message;
+            statusBox.className = `status-box' ${type}`;
+            statusBox.style.display = 'block';
+        }
+
+    </script>
+    
+</body>
+</html>
+
+        

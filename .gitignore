@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# SECRETS - never upload these
+.env
+.env.*
+!.env.example
+
+# Logs, backups and old copies (backups contain customer data)
+*.log
+email-errors.log
+moviedb_backup.sql
+*.bak
+public/movie-detail-OLD-BACKUP.html
+
+# Operating system files
+.DS_Store
+Thumbs.db
+public/movie-detail-OLD-BACKUP.html
+utils/testEmail.js

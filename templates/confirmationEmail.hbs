@@ -1,0 +1,160 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;  
+    }
+
+    .email-box {
+      max-width: 600px;
+      margin: 30px auto;
+      background-color: #ffffff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);  
+    }
+
+    .header {
+      background-color: #e50914;
+      color: white;
+      text-align: center;
+      padding: 30px 20px;  
+    }
+
+    .header h1 {
+        margin: 0;
+        font-size: 28px;
+    }
+
+    .header p {
+        margin: 5px 0 0;
+        font-size: 16px;
+    }
+
+    .content {
+      padding: 30px;  
+    }
+
+    .greeting {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .detail-row {
+      display: flex;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 15px;  
+    }
+
+    .detail-label {
+      width: 140px;
+      color: #888;
+      font-weight: bold;  
+    }
+
+    .detail-value {
+      color: #333;
+      font-weight: bold;
+    }
+
+    .booking-id {
+      background-color: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 5px;
+      padding: 10px 15px;
+      margin: 20px 0;
+      font-size: 14px;
+      color: #856404;  
+    }
+
+    .footer {
+      background-color: #f8f8f8;
+      text-align: center;
+      padding: 20px;
+      font-size: 13px;
+      color: #999;
+      border-top: 1px solid #eee;  
+    }
+
+    .enjoy-message {
+        text-align: center;
+        font-size: 18px;
+        color: #e50914;
+        font-weight: bold;
+        margin: 25px 0 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="email-box">
+  
+  <div class="header">
+    <h1>Booking Confirmed!</h1>
+    <p>Your movie ticket is all set</p>
+  </div>  
+
+  <div class="content">
+  
+  <p class="greeting">Hi <strong>{{user_name}}</strong>!</p>
+  <p style="color:#555;">
+    Great news! Your booking has been confirmed.
+    Here are your ticket details:
+  </p>
+
+  <div class="detail-row">
+    <span class="detail-label">Movie</span>
+    <span class="detail-value">{{movie_name}}</span>
+  </div>
+
+  <div class="detail-row">
+    <span class="detail-label">Theatre</span>
+    <span class="detail-value">{{theatre_name}}</span>
+  </div>
+
+  <div class="detail-row">
+    <span class="detail-label">Date</span>
+    <span class="detail-label">{{show_date}}</span>
+  </div>
+
+  <div class="detail-row">
+    <span class="detail-label">Time</span>
+    <span class="detail-value">{{show_time}}</span>
+  </div>
+
+  <div class="detail-row">
+    <span class="detail-label">Seats</span>
+    <span class="detail-value">{{seat_numbers}}</span>
+  </div>
+
+  <div class="detail-row">
+    <span class="detail-label">Payment ID</span>
+    <span class="detail-value">{{payment_id}}</span>
+  </div>
+
+  <div class="booking-id">
+       Your Booking ID: <strong>#{{booking_id}}</strong>
+       - Please save this for your records.
+  </div>
+
+  <p class="enjoy-message">Enjoy your movie!</p>
+
+</div>  
+
+<div class="footer">
+  <p>This is an automated confirmation email.</p>
+  <p>Please do not reply to this email.</p>
+  <p> 2025 Movie Booking App</p>
+</div>
+
+</div>
+
+</body>
+</html>
