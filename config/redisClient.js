@@ -1,14 +1,19 @@
-// Redis client setup for caching analytics query results.
-// npm install redis
-//
-// Make sure Redis server is running locally, or point REDIS_URL
-// to a hosted Redis instance (e.g. Redis Cloud free tier) in your .env
+// Redis client setup for caching analytics results and the admin logout blacklist.
+// Works with a local Redis/Memurai (redis://...) and with a secure online
+// service such as Aiven Valkey (rediss://...).
 
 const { createClient } = require('redis');
 
-const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379',
-});
+const url = process.env.REDIS_URL || 'redis://localhost:6379';
+
+const options = { url };
+
+// Secure (TLS) connection for online services
+if (url.startsWith('rediss://')) {
+  options.socket = { tls: true, rejectUnauthorized: false };
+}
+
+const redisClient = createClient(options);
 
 redisClient.on('error', (err) => {
   console.error('Redis connection error:', err.message);

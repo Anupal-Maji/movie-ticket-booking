@@ -20,7 +20,7 @@
 </style>
 </head>
 <body>
- 
+
 <div id="login-box">
   <h2>Admin Login</h2>
   <input type="text" id="username" placeholder="Username">
@@ -28,62 +28,63 @@
   <button onclick="login()">Log in</button>
   <div id="error-msg"></div>
 </div>
- 
+
 <div id="dashboard">
   <button id="logout-btn" onclick="logout()">Log out</button>
   <h1>Admin Analytics Dashboard</h1>
- 
+
   <div class="grid">
     <div class="card">
       <h3>Cancellation Rate</h3>
       <div id="cancellation-data">Loading...</div>
     </div>
- 
+
     <div class="card">
       <h3>Peak Booking Hours</h3>
       <div id="peak-hours-data">Loading...</div>
     </div>
- 
+
     <div class="card">
       <h3>Most Popular Movies</h3>
       <div id="popular-movies-data">Loading...</div>
     </div>
- 
+
     <div class="card">
       <h3>Busiest Theatres</h3>
       <div id="busiest-theatres-data">Loading...</div>
     </div>
- 
+
     <div class="card" style="grid-column: 1 / -1;">
       <h3>Revenue (Daily)</h3>
       <div id="revenue-data">Loading...</div>
     </div>
   </div>
 </div>
- 
+
 <script>
-const API_BASE = 'http://localhost:3000/api/admin';
- 
+// Change this to match your actual backend port
+const API_BASE = '/api/admin';
+
 async function login() {
   const username = document.getElementById('username').value;
   const password = document.getElementById('password').value;
   const errorBox = document.getElementById('error-msg');
   errorBox.textContent = '';
- 
+
   try {
     const res = await fetch(`${API_BASE}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
- 
+
     const data = await res.json();
- 
+
     if (!res.ok) {
       errorBox.textContent = data.error || 'Login failed.';
       return;
     }
- 
+
     localStorage.setItem('admin_token', data.token);
     document.getElementById('login-box').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
@@ -93,10 +94,12 @@ async function login() {
     console.error(err);
   }
 }
- 
+
 async function logout() {
   const token = localStorage.getItem('admin_token');
- 
+
+  // Tell the server to blacklist this token in Redis, so it stops
+  // working immediately instead of staying valid until it expires.
   try {
     await fetch(`${API_BASE}/logout`, {
       method: 'POST',
@@ -104,14 +107,14 @@ async function logout() {
     });
   } catch (err) {
     console.error('Logout request failed (server may be down):', err);
-  
+    // Even if this fails, we still clear the browser's copy below.
   }
- 
+
   localStorage.removeItem('admin_token');
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('login-box').style.display = 'block';
 }
- 
+
 async function authFetch(endpoint) {
   const token = localStorage.getItem('admin_token');
   const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -120,7 +123,7 @@ async function authFetch(endpoint) {
   if (!res.ok) throw new Error(`${endpoint} failed: ${res.status}`);
   return res.json();
 }
- 
+
 async function loadAllAnalytics() {
   try {
     const revenue = await authFetch('/analytics/revenue');
@@ -131,7 +134,7 @@ async function loadAllAnalytics() {
     document.getElementById('revenue-data').textContent = 'Failed to load.';
     console.error(err);
   }
- 
+
   try {
     const movies = await authFetch('/analytics/popular-movies');
     document.getElementById('popular-movies-data').innerHTML = renderTable(
@@ -141,7 +144,7 @@ async function loadAllAnalytics() {
     document.getElementById('popular-movies-data').textContent = 'Failed to load.';
     console.error(err);
   }
- 
+
   try {
     const theatres = await authFetch('/analytics/busiest-theatres');
     document.getElementById('busiest-theatres-data').innerHTML = renderTable(
@@ -151,7 +154,7 @@ async function loadAllAnalytics() {
     document.getElementById('busiest-theatres-data').textContent = 'Failed to load.';
     console.error(err);
   }
- 
+
   try {
     const hours = await authFetch('/analytics/peak-hours');
     document.getElementById('peak-hours-data').innerHTML = renderTable(
@@ -161,7 +164,7 @@ async function loadAllAnalytics() {
     document.getElementById('peak-hours-data').textContent = 'Failed to load.';
     console.error(err);
   }
- 
+
   try {
     const cancellation = await authFetch('/analytics/cancellation-rate');
     document.getElementById('cancellation-data').innerHTML = `
@@ -174,7 +177,7 @@ async function loadAllAnalytics() {
     console.error(err);
   }
 }
- 
+
 function renderTable(rows, columns) {
   if (!rows || rows.length === 0) return '<p>No data yet.</p>';
   let html = '<table><tr>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
@@ -184,14 +187,14 @@ function renderTable(rows, columns) {
   html += '</table>';
   return html;
 }
- 
 
+// If already logged in from a previous session, skip straight to dashboard
 if (localStorage.getItem('admin_token')) {
   document.getElementById('login-box').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   loadAllAnalytics();
 }
 </script>
- 
+
 </body>
 </html>
